@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Enter tag to rollback'
+        description: 'Enter tag to rollback (example: v1.0)'
         required: true
 
 jobs:
@@ -15,15 +15,26 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v3
       with:
-        fetch-depth: 0   # IMPORTANT: Fetch full history & tags
+        fetch-depth: 0
+
+    - name: Fetch all tags
+      run: git fetch --all --tags
 
     - name: Checkout Selected Tag
-      run: |
-        git fetch --all --tags
-        git checkout ${{ github.event.inputs.tag }}
+      run: git checkout ${{ github.event.inputs.tag }}
 
-    - name: Redeploy
+    - name: Remove old production folder
+      run: rm -rf production
+
+    - name: Create production folder
+      run: mkdir production
+
+    - name: Copy files to production
       run: |
-        mkdir -p production
-        cp -r * production/
-        echo "Rollback Successful!"
+        cp -r $(ls -A | grep -v production) production/
+
+    - name: Show deployed files
+      run: ls production
+
+    - name: Rollback Completed
+      run: echo "Rollback Successful!"
